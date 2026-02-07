@@ -1,0 +1,50 @@
+services:
+  finx-app:
+    container_name: finx-app
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    ports:
+      - "3001:3000"
+    env_file:
+      - .env
+    environment:
+      - DATABASE_URL=postgresql://${DB_USER}:${DB_PASSWORD}@postgres:5432/${DB_NAME}?connect_timeout=15
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - default
+      - web-proxy-net
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=web-proxy-net"
+      - "traefik.http.routers.finx.rule=Host(`finx.win`)"
+      - "traefik.http.routers.finx.entrypoints=websecure"
+      - "traefik.http.routers.finx.tls.certresolver=myresolver"
+      - "traefik.http.services.finx.loadbalancer.server.port=3000"
+
+  postgres:
+    container_name: finx-postgres
+    image: postgres:15-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
+    volumes:
+      - /data/projects/finx.win/db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - default
+
+networks:
+  web-proxy-net:
+    external: true
+  default:
+    driver: bridge

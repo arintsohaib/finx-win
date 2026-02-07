@@ -1,0 +1,1136 @@
+@import "tailwindcss";
+@source "../app";
+@source "../components";
+
+@theme {
+  --color-background: hsl(var(--background));
+  --color-foreground: hsl(var(--foreground));
+  --color-card: hsl(var(--card));
+  --color-card-foreground: hsl(var(--card-foreground));
+  --color-popover: hsl(var(--popover));
+  --color-popover-foreground: hsl(var(--popover-foreground));
+  --color-primary: hsl(var(--primary));
+  --color-primary-foreground: hsl(var(--primary-foreground));
+  --color-secondary: hsl(var(--secondary));
+  --color-secondary-foreground: hsl(var(--secondary-foreground));
+  --color-muted: hsl(var(--muted));
+  --color-muted-foreground: hsl(var(--muted-foreground));
+  --color-accent: hsl(var(--accent));
+  --color-accent-foreground: hsl(var(--accent-foreground));
+  --color-destructive: hsl(var(--destructive));
+  --color-destructive-foreground: hsl(var(--destructive-foreground));
+  --color-border: hsl(var(--border));
+  --color-input: hsl(var(--input));
+  --color-ring: hsl(var(--ring));
+
+  --radius-lg: var(--radius);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-sm: calc(var(--radius) - 4px);
+
+  --animate-accordion-down: accordion-down 0.2s ease-out;
+  --animate-accordion-up: accordion-up 0.2s ease-out;
+
+  @keyframes accordion-down {
+    from {
+      height: 0;
+    }
+
+    to {
+      height: var(--radix-accordion-content-height);
+    }
+  }
+
+  @keyframes accordion-up {
+    from {
+      height: var(--radix-accordion-content-height);
+    }
+
+    to {
+      height: 0;
+    }
+  }
+}
+
+/* Mobile Optimization - Prevent horizontal scrolling */
+@layer base {
+
+  html,
+  body {
+    overflow-x: hidden;
+    width: 100%;
+    position: relative;
+  }
+
+  /* Better touch scrolling on iOS */
+  * {
+    -webkit-tap-highlight-color: transparent;
+    -webkit-touch-callout: none;
+  }
+
+  /* Smooth scrolling for mobile */
+  html {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* Support for iOS safe areas and notches */
+  :root {
+    --safe-area-inset-top: env(safe-area-inset-top);
+    --safe-area-inset-right: env(safe-area-inset-right);
+    --safe-area-inset-bottom: env(safe-area-inset-bottom);
+    --safe-area-inset-left: env(safe-area-inset-left);
+  }
+
+  /* ============================================
+     ZOOM PREVENTION - Global Disable
+     ============================================ */
+
+  /* Prevent touch-based zoom on all elements */
+  * {
+    touch-action: pan-x pan-y !important;
+  }
+
+  /* Specific elements that should never allow zoom */
+  body,
+  html,
+  input,
+  textarea,
+  select,
+  button {
+    touch-action: pan-x pan-y !important;
+  }
+
+  /* iOS specific zoom prevention for inputs */
+  input,
+  textarea,
+  select {
+    font-size: 16px !important;
+    /* Prevents iOS auto-zoom on focus */
+  }
+
+  /* Prevent text selection zoom on iOS */
+  body {
+    -webkit-text-size-adjust: 100% !important;
+    -moz-text-size-adjust: 100% !important;
+    -ms-text-size-adjust: 100% !important;
+    text-size-adjust: 100% !important;
+  }
+
+  /* Prevent user zoom on modal overlays and dialogs */
+  [role="dialog"],
+  [role="alertdialog"],
+  .modal,
+  [data-radix-dialog-overlay],
+  [data-radix-dialog-content] {
+    touch-action: pan-x pan-y !important;
+  }
+}
+
+/* Hide scrollbar but keep functionality */
+@layer utilities {
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* Touch manipulation for better mobile UX */
+  .touch-manipulation {
+    touch-action: manipulation;
+  }
+
+  /* ========================================
+     ENTERPRISE DESIGN SYSTEM - TOKEN DEFS
+     ======================================== */
+  :root {
+    --modal-header-gradient: linear-gradient(135deg, rgba(59, 130, 246, 0.05) 0%, rgba(168, 85, 247, 0.05) 100%);
+    --modal-border: rgba(0, 0, 0, 0.08);
+    --modal-glass: rgba(255, 255, 255, 0.95);
+    --enterprise-card-bg: rgba(255, 255, 255, 0.8);
+    --enterprise-input-bg: rgba(0, 0, 0, 0.03);
+  }
+
+  .dark {
+    --modal-header-gradient: linear-gradient(135deg, rgba(0, 217, 192, 0.15) 0%, rgba(59, 130, 246, 0.15) 50%, rgba(168, 85, 247, 0.15) 100%);
+    --modal-border: rgba(255, 255, 255, 0.05);
+    --modal-glass: rgba(0, 0, 0, 0.4);
+    --enterprise-card-bg: rgba(255, 255, 255, 0.03);
+    --enterprise-input-bg: rgba(255, 255, 255, 0.05);
+  }
+
+  .enterprise-glass {
+    background: var(--modal-glass);
+    backdrop-filter: blur(20px);
+    border: 1px solid var(--modal-border);
+    @apply shadow-2xl;
+  }
+
+  .enterprise-input {
+    background: var(--enterprise-input-bg);
+    border: 1px solid var(--modal-border);
+    @apply rounded-xl focus:ring-2 focus:ring-primary/20 transition-all outline-none;
+  }
+
+  .enterprise-card {
+    background: var(--enterprise-card-bg);
+    border: 1px solid var(--modal-border);
+    @apply rounded-2xl p-4 transition-all hover:bg-foreground/[0.02];
+  }
+
+  .enterprise-header {
+    background: var(--modal-header-gradient);
+    border-bottom: 1px solid var(--modal-border);
+    @apply relative p-5 flex-shrink-0;
+  }
+
+  .enterprise-icon-wrapper {
+    @apply relative w-12 h-12 flex-shrink-0 rounded-2xl ring-1 ring-white/10 overflow-hidden bg-gradient-to-br from-white/10 to-white/5 flex items-center justify-center shadow-lg;
+  }
+
+  .enterprise-title {
+    @apply text-xl font-bold leading-tight text-foreground mb-0.5;
+  }
+
+  .enterprise-subtitle {
+    @apply text-xs font-medium text-muted-foreground;
+  }
+
+  /* ========================================
+     FINTECH 2026 GLASSMORPHISM & DEPTH
+     ======================================== */
+  .glass-morphism {
+    background-color: hsl(var(--background) / 0.4);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.1);
+  }
+
+  .dark .glass-morphism {
+    border-color: rgba(255, 255, 255, 0.05);
+  }
+
+  .glass-card {
+    background-color: hsl(var(--card) / 0.6);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  }
+
+  .dark .glass-card {
+    border-color: rgba(255, 255, 255, 0.1);
+  }
+
+  .floating-island {
+    position: fixed;
+    bottom: 1rem;
+    left: 1rem;
+    right: 1rem;
+    z-index: 50;
+    border-radius: 1rem;
+    background-color: hsl(var(--background) / 0.4);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    padding: 1rem 1rem;
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.2);
+  }
+
+  .depth-shadow {
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  }
+
+  .depth-shadow-lg {
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  }
+
+  /* ========================================
+     OPTIMIZED 3-LEVEL GRADIENT DESIGN SYSTEM v3.0
+     ======================================== */
+
+  /* ===========================================
+     LEVEL 1 - SUBTLE (Backgrounds, Large Areas)
+     =========================================== */
+
+  /* Subtle Page Background */
+  .gradient-subtle {
+    background: linear-gradient(135deg, rgba(0, 217, 192, 0.02) 0%, rgba(59, 130, 246, 0.03) 50%, rgba(168, 85, 247, 0.02) 100%);
+    @apply relative;
+  }
+
+  .dark .gradient-subtle {
+    background: linear-gradient(135deg, rgba(0, 217, 192, 0.03) 0%, rgba(59, 130, 246, 0.04) 50%, rgba(168, 85, 247, 0.03) 100%);
+  }
+
+  /* Subtle Overlay - For layered backgrounds */
+  .gradient-overlay {
+    @apply absolute inset-0 pointer-events-none z-0;
+    background: linear-gradient(135deg, rgba(0, 217, 192, 0.02), transparent 50%, rgba(59, 130, 246, 0.02));
+  }
+
+  .dark .gradient-overlay {
+    background: linear-gradient(135deg, rgba(0, 217, 192, 0.03), transparent 50%, rgba(59, 130, 246, 0.03));
+  }
+
+  /* ===============================================
+     LEVEL 2 - MEDIUM (Cards, Interactive Elements)
+     =============================================== */
+
+  /* Medium Gradient Card - Standard card background */
+  .gradient-card,
+  .gradient-medium {
+    background: linear-gradient(135deg, rgba(0, 217, 192, 0.08) 0%, rgba(59, 130, 246, 0.08) 50%, rgba(168, 85, 247, 0.06) 100%);
+    @apply border-2 relative overflow-hidden;
+    border-color: rgba(0, 217, 192, 0.30);
+    box-shadow: 0 4px 12px -2px rgba(0, 217, 192, 0.08), 0 2px 6px -2px rgba(0, 0, 0, 0.05);
+    @apply transition-all duration-300 ease-in-out;
+  }
+
+  .gradient-card:hover,
+  .gradient-medium:hover {
+    box-shadow: 0 8px 24px -4px rgba(0, 217, 192, 0.15), 0 4px 12px -4px rgba(0, 0, 0, 0.1);
+    border-color: rgba(0, 217, 192, 0.50);
+    background: linear-gradient(135deg, rgba(0, 217, 192, 0.12) 0%, rgba(59, 130, 246, 0.12) 50%, rgba(168, 85, 247, 0.08) 100%);
+    @apply scale-[1.01];
+  }
+
+  .dark .gradient-card,
+  .dark .gradient-medium {
+    background: linear-gradient(135deg, rgba(0, 217, 192, 0.12) 0%, rgba(59, 130, 246, 0.12) 50%, rgba(168, 85, 247, 0.08) 100%);
+    border-color: rgba(0, 217, 192, 0.40);
+    box-shadow: 0 8px 20px -4px rgba(0, 217, 192, 0.12), 0 4px 10px -4px rgba(0, 0, 0, 0.3);
+  }
+
+  .dark .gradient-card:hover,
+  .dark .gradient-medium:hover {
+    box-shadow: 0 12px 32px -6px rgba(0, 217, 192, 0.18), 0 6px 16px -6px rgba(0, 0, 0, 0.4);
+    border-color: rgba(0, 217, 192, 0.60);
+    background: linear-gradient(135deg, rgba(0, 217, 192, 0.16) 0%, rgba(59, 130, 246, 0.16) 50%, rgba(168, 85, 247, 0.10) 100%);
+  }
+
+  /* Medium Gradient Border Accent */
+  .gradient-accent {
+    @apply border-2 transition-all duration-300;
+    border-color: rgba(0, 217, 192, 0.25);
+    box-shadow: 0 2px 8px -2px rgba(0, 217, 192, 0.05);
+  }
+
+  .gradient-accent:hover {
+    @apply shadow-md;
+    border-color: rgba(0, 217, 192, 0.45);
+    box-shadow: 0 4px 12px -2px rgba(0, 217, 192, 0.1);
+  }
+
+  .dark .gradient-accent {
+    border-color: rgba(0, 217, 192, 0.35);
+    box-shadow: 0 2px 8px -2px rgba(0, 217, 192, 0.08);
+  }
+
+  .dark .gradient-accent:hover {
+    border-color: rgba(0, 217, 192, 0.55);
+    box-shadow: 0 6px 16px -3px rgba(0, 217, 192, 0.15);
+  }
+
+  /* =======================================================
+     LEVEL 3 - BOLD (CTAs, Highlights, Important Actions)
+     ======================================================= */
+
+  /* Bold Gradient Icon Box */
+  .gradient-icon-box,
+  .gradient-bold {
+    background: linear-gradient(135deg, #00D9C0 0%, #3B82F6 100%);
+    @apply rounded-lg;
+    box-shadow: 0 6px 16px -4px rgba(0, 217, 192, 0.4), 0 3px 8px -3px rgba(0, 0, 0, 0.2);
+    @apply flex items-center justify-center;
+    @apply transition-all duration-300 ease-in-out;
+  }
+
+  .gradient-icon-box:hover,
+  .gradient-bold:hover {
+    box-shadow: 0 10px 24px -6px rgba(0, 217, 192, 0.5), 0 5px 12px -5px rgba(0, 0, 0, 0.3);
+    @apply scale-105;
+    transform: translateY(-2px) scale(1.05);
+  }
+
+  .dark .gradient-icon-box,
+  .dark .gradient-bold {
+    background: linear-gradient(135deg, #00D9C0 0%, #3B82F6 100%);
+    box-shadow: 0 8px 20px -4px rgba(0, 217, 192, 0.5), 0 4px 10px -4px rgba(0, 0, 0, 0.4);
+  }
+
+  .dark .gradient-icon-box:hover,
+  .dark .gradient-bold:hover {
+    box-shadow: 0 12px 32px -6px rgba(0, 217, 192, 0.6), 0 6px 16px -6px rgba(0, 0, 0, 0.5);
+  }
+
+  /* Fintech 2026 Neon Pulse */
+  .neon-pulse {
+    box-shadow: 0 0 15px rgba(0, 217, 192, 0.4);
+    animation: neon-pulse-animation 2s infinite alternate;
+  }
+
+  @keyframes neon-pulse-animation {
+    from {
+      box-shadow: 0 0 10px rgba(0, 217, 192, 0.2);
+    }
+
+    to {
+      box-shadow: 0 0 25px rgba(0, 217, 192, 0.6);
+    }
+  }
+
+  /* ========================
+     GRADIENT TEXT UTILITIES
+     ======================== */
+
+  /* Bold Gradient Text */
+  .gradient-text {
+    background: linear-gradient(135deg, #00D9C0 0%, #3B82F6 50%, #A855F7 100%);
+    @apply bg-clip-text text-transparent;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  /* Simple Gradient Text (2 colors) */
+  .gradient-text-simple {
+    background: linear-gradient(135deg, #00D9C0 0%, #3B82F6 100%);
+    @apply bg-clip-text text-transparent;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  /* Fallback for browsers that don't support gradient text */
+  @supports not (background-clip: text) {
+
+    .gradient-text,
+    .gradient-text-simple {
+      color: #00D9C0;
+      background: none;
+    }
+  }
+
+  /* =======================
+     GRADIENT BUTTON SYSTEM
+     ======================= */
+
+  /* Bold Primary Button */
+  .gradient-btn-primary {
+    background: linear-gradient(135deg, #00D9C0 0%, #3B82F6 100%);
+    @apply text-white font-semibold;
+    box-shadow: 0 6px 16px -4px rgba(0, 217, 192, 0.4), 0 3px 8px -3px rgba(0, 0, 0, 0.2);
+    @apply transition-all duration-300 ease-in-out;
+  }
+
+  .gradient-btn-primary:hover {
+    box-shadow: 0 10px 24px -6px rgba(0, 217, 192, 0.5), 0 5px 12px -5px rgba(0, 0, 0, 0.3);
+    @apply scale-[1.02];
+    transform: translateY(-1px) scale(1.02);
+  }
+
+  .gradient-btn-primary:active {
+    @apply scale-[0.98];
+    transform: translateY(0) scale(0.98);
+  }
+
+  .dark .gradient-btn-primary {
+    box-shadow: 0 8px 20px -4px rgba(0, 217, 192, 0.5), 0 4px 10px -4px rgba(0, 0, 0, 0.4);
+  }
+
+  .dark .gradient-btn-primary:hover {
+    box-shadow: 0 12px 32px -6px rgba(0, 217, 192, 0.6), 0 6px 16px -6px rgba(0, 0, 0, 0.5);
+  }
+
+  /* Medium Secondary Button */
+  .gradient-btn-secondary {
+    @apply bg-transparent border-2;
+    border-color: rgba(0, 217, 192, 0.60);
+    @apply text-[#00D9C0] font-semibold;
+    @apply transition-all duration-300 ease-in-out;
+  }
+
+  .gradient-btn-secondary:hover {
+    background: linear-gradient(135deg, rgba(0, 217, 192, 0.10) 0%, rgba(59, 130, 246, 0.10) 100%);
+    border-color: rgba(0, 217, 192, 1.0);
+    @apply scale-[1.02];
+  }
+
+  .gradient-btn-secondary:active {
+    @apply scale-[0.98];
+  }
+
+  .dark .gradient-btn-secondary {
+    border-color: rgba(0, 217, 192, 0.70);
+  }
+
+  .dark .gradient-btn-secondary:hover {
+    background: linear-gradient(135deg, rgba(0, 217, 192, 0.15) 0%, rgba(59, 130, 246, 0.15) 100%);
+  }
+
+  /* Subtle Ghost Button */
+  .gradient-btn-ghost {
+    @apply bg-transparent text-foreground;
+    @apply transition-all duration-300 ease-in-out;
+  }
+
+  .gradient-btn-ghost:hover {
+    background: linear-gradient(135deg, rgba(0, 217, 192, 0.08) 0%, rgba(59, 130, 246, 0.08) 100%);
+    @apply scale-[1.02];
+  }
+
+  .gradient-btn-ghost:active {
+    @apply scale-[0.98];
+  }
+
+  .dark .gradient-btn-ghost:hover {
+    background: linear-gradient(135deg, rgba(0, 217, 192, 0.12) 0%, rgba(59, 130, 246, 0.12) 100%);
+  }
+
+  /* =========================
+     SPECIALIZED PAGE STYLES
+     ========================= */
+
+  /* Professional Gradient (For Converter, Trading) */
+  .gradient-professional {
+    background: linear-gradient(135deg, rgba(0, 217, 192, 0.04) 0%, rgba(59, 130, 246, 0.04) 100%);
+    @apply transition-all duration-300;
+  }
+
+  .dark .gradient-professional {
+    background: linear-gradient(135deg, rgba(0, 217, 192, 0.06) 0%, rgba(59, 130, 246, 0.06) 100%);
+  }
+
+  /* Minimal Gradient (For Auth, Clean Pages) */
+  .gradient-minimal {
+    background: linear-gradient(135deg, rgba(0, 217, 192, 0.02) 0%, rgba(59, 130, 246, 0.02) 100%);
+  }
+
+  .dark .gradient-minimal {
+    background: linear-gradient(135deg, rgba(0, 217, 192, 0.03) 0%, rgba(59, 130, 246, 0.03) 100%);
+  }
+
+  /* Comfortable Gradient (For Chat, Knowledge, Reading) */
+  .gradient-comfortable {
+    background: linear-gradient(135deg, rgba(0, 217, 192, 0.03) 0%, transparent 50%, rgba(59, 130, 246, 0.03) 100%);
+  }
+
+  .dark .gradient-comfortable {
+    background: linear-gradient(135deg, rgba(0, 217, 192, 0.04) 0%, transparent 50%, rgba(59, 130, 246, 0.04) 100%);
+  }
+
+  /* ====================
+     COMPONENT UTILITIES
+     ==================== */
+
+  /* Bold Badge */
+  .gradient-badge {
+    background: linear-gradient(135deg, #00D9C0 0%, #3B82F6 100%);
+    @apply text-white text-xs font-bold;
+    @apply px-2.5 py-1 rounded-full;
+    box-shadow: 0 4px 12px -2px rgba(0, 217, 192, 0.3);
+  }
+
+  .dark .gradient-badge {
+    box-shadow: 0 6px 16px -3px rgba(0, 217, 192, 0.4);
+  }
+
+  /* Focus Ring */
+  .gradient-focus {
+    @apply focus-visible:ring-2 focus-visible:ring-[#00D9C0];
+    @apply focus-visible:ring-offset-2 focus-visible:ring-offset-background;
+  }
+
+  .dark .gradient-focus {
+    @apply focus-visible:ring-2;
+    --tw-ring-color: rgba(0, 217, 192, 0.80);
+  }
+
+  /* Active State */
+  .gradient-active {
+    background: linear-gradient(135deg, rgba(0, 217, 192, 0.10) 0%, rgba(59, 130, 246, 0.10) 100%);
+    @apply border-l-4 border-l-[#00D9C0];
+  }
+
+  .dark .gradient-active {
+    background: linear-gradient(135deg, rgba(0, 217, 192, 0.15) 0%, rgba(59, 130, 246, 0.15) 100%);
+    box-shadow: 0 4px 12px -2px rgba(0, 217, 192, 0.15);
+  }
+
+  /* Glow Effect (Dark Mode) */
+  .dark .gradient-glow {
+    box-shadow: 0 12px 24px -6px rgba(0, 217, 192, 0.25), 0 6px 12px -6px rgba(0, 0, 0, 0.3);
+  }
+
+  /* ===================
+     ANIMATION SYSTEM
+     =================== */
+
+  /* Shimmer Animation */
+  @keyframes gradient-shimmer {
+    0% {
+      background-position: 0% 50%;
+    }
+
+    50% {
+      background-position: 100% 50%;
+    }
+
+    100% {
+      background-position: 0% 50%;
+    }
+  }
+
+  .gradient-shimmer {
+    background-size: 200% 200%;
+    animation: gradient-shimmer 3s ease-in-out infinite;
+  }
+
+  /* Pulse Animation */
+  @keyframes gradient-pulse {
+
+    0%,
+    100% {
+      opacity: 1;
+    }
+
+    50% {
+      opacity: 0.75;
+    }
+  }
+
+  .gradient-pulse {
+    animation: gradient-pulse 2.5s ease-in-out infinite;
+  }
+}
+
+@layer base {
+  :root {
+    /* Light Theme - Default */
+    --background: 0 0% 100%;
+    --foreground: 222 47% 11%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 222 47% 11%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 222 47% 11%;
+
+    --primary: 174 100% 42%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 210 40% 96%;
+    --secondary-foreground: 222 47% 11%;
+
+    --muted: 210 40% 96%;
+    --muted-foreground: 215 16% 47%;
+
+    --accent: 210 40% 96%;
+    --accent-foreground: 222 47% 11%;
+
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 98%;
+
+    --border: 214 32% 91%;
+    --input: 214 32% 91%;
+    --ring: 174 100% 42%;
+
+    --radius: 0.5rem;
+
+    /* Custom colors for trading */
+    --success: 142 76% 36%;
+    --success-foreground: 0 0% 100%;
+    --danger: 0 72% 51%;
+    --danger-foreground: 0 0% 100%;
+  }
+
+  .dark {
+    /* Dark Theme - Premium Redesign */
+    /* Main background - Rich dark navy blue */
+    --background: 222 47% 8%;
+    --foreground: 210 40% 98%;
+
+    /* Card backgrounds - Elevated from main background with better contrast */
+    --card: 222 40% 12%;
+    --card-foreground: 210 40% 98%;
+
+    /* Popover backgrounds - Slightly elevated from cards */
+    --popover: 222 40% 14%;
+    --popover-foreground: 210 40% 98%;
+
+    /* Primary - Bright teal/cyan for excellent visibility */
+    --primary: 174 100% 45%;
+    --primary-foreground: 222 47% 8%;
+
+    /* Secondary - Subtle blue-gray for secondary elements */
+    --secondary: 217 35% 20%;
+    --secondary-foreground: 210 40% 98%;
+
+    /* Muted - For disabled/muted content with better readability */
+    --muted: 217 35% 18%;
+    --muted-foreground: 215 20% 75%;
+
+    /* Accent - Vibrant accent for highlighting */
+    --accent: 217 35% 22%;
+    --accent-foreground: 210 40% 98%;
+
+    /* Destructive - Clear red for warnings/errors */
+    --destructive: 0 72% 58%;
+    --destructive-foreground: 0 0% 98%;
+
+    /* Borders - Visible but subtle */
+    --border: 217 35% 24%;
+    --input: 217 35% 22%;
+    --ring: 174 100% 45%;
+
+    /* Trading colors - Enhanced for dark mode */
+    --success: 142 76% 48%;
+    --success-foreground: 222 47% 8%;
+    --danger: 0 72% 58%;
+    --danger-foreground: 0 0% 98%;
+  }
+}
+
+@layer base {
+  * {
+    border-color: hsl(var(--border));
+  }
+
+  body {
+    background-color: hsl(var(--background));
+    color: hsl(var(--foreground));
+  }
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: hsl(var(--muted));
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: hsl(var(--muted-foreground) / 0.4);
+  border-radius: 4px;
+  border: 2px solid hsl(var(--muted));
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: hsl(var(--muted-foreground) / 0.6);
+}
+
+/* Dark mode specific scrollbar */
+.dark ::-webkit-scrollbar-thumb {
+  background: hsl(var(--primary) / 0.3);
+  border: 2px solid hsl(var(--background));
+}
+
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: hsl(var(--primary) / 0.5);
+}
+
+/* Smooth transitions - Only apply to interactive elements to prevent hydration thrashing */
+a,
+button,
+input,
+select,
+textarea,
+[role="button"] {
+  transition-property: color, background-color, border-color, text-decoration-color, fill, stroke, opacity, box-shadow, transform, filter, backdrop-filter;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  transition-duration: 150ms;
+}
+
+/* Loading animation */
+@keyframes pulse {
+
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: .5;
+  }
+}
+
+.animate-pulse {
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* Counter animation */
+@keyframes countUp {
+  from {
+    transform: translateY(10px);
+    opacity: 0;
+  }
+
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.animate-count-up {
+  animation: countUp 0.6s ease-out;
+}
+
+/* Sparkline hover effects */
+.sparkline-container:hover .sparkline {
+  transform: scale(1.05);
+  transition: transform 0.2s ease-in-out;
+}
+
+/* Custom focus styles */
+.focus\:ring-primary:focus {
+  --tw-ring-color: hsl(var(--primary));
+}
+
+/* Mobile responsiveness improvements */
+@media (max-width: 640px) {
+  .mobile-padding {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+}
+
+/* Print styles */
+@media print {
+  .no-print {
+    display: none !important;
+  }
+}
+
+/* Dark Theme Enhancements */
+.dark {
+  /* Improve text contrast for better readability */
+  color-scheme: dark;
+}
+
+/* Enhanced card shadows for depth in dark mode */
+.dark .shadow-sm {
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.5), 0 1px 2px -1px rgba(0, 0, 0, 0.5);
+}
+
+.dark .shadow {
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.5), 0 2px 4px -2px rgba(0, 0, 0, 0.5);
+}
+
+.dark .shadow-lg {
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.6), 0 4px 6px -4px rgba(0, 0, 0, 0.6);
+}
+
+/* Enhanced hover effects for dark mode */
+.dark .hover\:shadow-lg:hover {
+  box-shadow: 0 10px 20px -5px rgba(0, 209, 178, 0.2), 0 4px 6px -4px rgba(0, 0, 0, 0.6);
+}
+
+/* Better button contrast in dark mode */
+.dark button {
+  font-weight: 500;
+}
+
+/* Improved input fields in dark mode */
+.dark input,
+.dark textarea,
+.dark select {
+  background-color: hsl(var(--input));
+  border: 1px solid hsl(var(--border));
+  color: hsl(var(--foreground));
+}
+
+.dark input::placeholder,
+.dark textarea::placeholder {
+  color: hsl(var(--muted-foreground) / 0.7);
+}
+
+.dark input:focus,
+.dark textarea:focus,
+.dark select:focus {
+  border-color: hsl(var(--primary));
+  box-shadow: 0 0 0 3px hsl(var(--primary) / 0.1);
+}
+
+/* Enhanced table styling for dark mode */
+.dark table {
+  border-color: hsl(var(--border));
+}
+
+.dark thead {
+  background-color: hsl(var(--muted));
+  border-bottom: 2px solid hsl(var(--border));
+}
+
+.dark tbody tr {
+  border-bottom: 1px solid hsl(var(--border));
+}
+
+.dark tbody tr:hover {
+  background-color: hsl(var(--accent));
+}
+
+/* Badge and pill enhancements for dark mode */
+.dark .badge,
+.dark [class*="badge"] {
+  font-weight: 600;
+}
+
+/* Icon color improvements in dark mode */
+.dark svg {
+  color: hsl(var(--foreground));
+}
+
+/* Notification badge visibility in dark mode */
+.dark .notification-badge {
+  background-color: hsl(var(--danger));
+  color: hsl(var(--danger-foreground));
+  font-weight: 700;
+  box-shadow: 0 0 10px hsl(var(--danger) / 0.5);
+}
+
+/* Modal and dialog enhancements for dark mode */
+.dark [role="dialog"] {
+  background-color: hsl(var(--card));
+  border: 1px solid hsl(var(--border));
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.7), 0 10px 10px -5px rgba(0, 0, 0, 0.7);
+}
+
+/* Dropdown menu improvements */
+.dark [role="menu"] {
+  background-color: hsl(var(--popover));
+  border: 1px solid hsl(var(--border));
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.6);
+}
+
+/* Link hover states in dark mode */
+.dark a:hover {
+  color: hsl(var(--primary));
+}
+
+/* Toast notifications in dark mode */
+.dark .sonner-toast {
+  background-color: hsl(var(--card)) !important;
+  border: 1px solid hsl(var(--border)) !important;
+  color: hsl(var(--foreground)) !important;
+}
+
+/* ========================================
+   MOBILE MODAL FIX - Full viewport coverage
+   ======================================== */
+
+/* Mobile-first modal viewport height fix */
+.modal-mobile-full {
+  /* Use dynamic viewport height to account for mobile browser chrome */
+  min-height: 100vh;
+  min-height: 100dvh;
+  /* For browsers that support dvh */
+  min-height: -webkit-fill-available;
+  /* Safari fallback */
+}
+
+/* Ensure modal overlay covers entire viewport on mobile */
+.modal-overlay-mobile {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  min-height: 100vh;
+  min-height: 100dvh;
+  min-height: -webkit-fill-available;
+  z-index: 50;
+  overscroll-behavior: contain;
+  /* Prevent scroll chaining on iOS */
+}
+
+/* Mobile modal content container */
+/* Mobile-first modal - full screen on mobile, centered on desktop */
+.modal-content-mobile {
+  position: fixed !important;
+  inset: 0 !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  height: 100vh !important;
+  height: 100dvh !important;
+  min-height: 100vh !important;
+  min-height: 100dvh !important;
+  min-height: -webkit-fill-available !important;
+  max-height: none !important;
+  z-index: 51 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  overflow: hidden !important;
+  transform: none !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  /* Add safe area padding for iOS notches */
+  padding-top: var(--safe-area-inset-top, 0);
+  padding-bottom: var(--safe-area-inset-bottom, 0);
+}
+
+/* Scrollable content area within modal */
+.modal-scroll-area {
+  flex: 1 !important;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  -webkit-overflow-scrolling: touch !important;
+  /* Smooth scrolling on iOS */
+  overscroll-behavior: contain !important;
+  min-height: 0 !important;
+}
+
+/* Tablet and Desktop modal - centered */
+/* Using 768px breakpoint to properly handle tablets like iPad */
+@media (min-width: 768px) {
+  .modal-content-mobile {
+    position: fixed !important;
+    top: 50% !important;
+    left: 50% !important;
+    right: auto !important;
+    bottom: auto !important;
+    transform: translate(-50%, -50%) !important;
+    width: auto !important;
+    height: auto !important;
+    min-height: auto !important;
+    max-height: 85vh !important;
+    max-width: 28rem !important;
+    /* 448px - good for tablets and desktop */
+    inset: auto !important;
+    padding: 0 !important;
+    margin: 0 auto !important;
+  }
+}
+
+/* Larger screens - increase max width */
+@media (min-width: 1024px) {
+  .modal-content-mobile {
+    max-width: 32rem !important;
+    /* 512px - more space on desktop */
+    max-height: 90vh !important;
+  }
+}
+
+/* Chart and graph color adjustments for dark mode */
+.dark .recharts-surface {
+  background-color: transparent;
+}
+
+.dark .recharts-text {
+  fill: hsl(var(--foreground)) !important;
+}
+
+.dark .recharts-cartesian-axis-line,
+.dark .recharts-cartesian-grid-horizontal line,
+.dark .recharts-cartesian-grid-vertical line {
+  stroke: hsl(var(--border)) !important;
+}
+
+/* Tab improvements for dark mode */
+.dark [role="tablist"] {
+  background-color: hsl(var(--muted));
+  border-radius: calc(var(--radius) - 2px);
+}
+
+.dark [role="tab"][data-state="active"] {
+  background-color: hsl(var(--card));
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+/* Card hover effects in dark mode */
+.dark .card:hover,
+.dark [class*="card"]:hover {
+  border-color: hsl(var(--primary) / 0.5);
+  background-color: hsl(var(--card));
+}
+
+/* Loading spinner visibility in dark mode */
+.dark .animate-spin {
+  border-color: hsl(var(--primary) / 0.3);
+  border-top-color: hsl(var(--primary));
+}
+
+/* Success/Win indicators */
+.dark .text-success,
+.dark .text-green-500,
+.dark .text-green-600 {
+  color: hsl(var(--success)) !important;
+  font-weight: 600;
+}
+
+/* Danger/Loss indicators */
+.dark .text-danger,
+.dark .text-red-500,
+.dark .text-red-600 {
+  color: hsl(var(--danger)) !important;
+  font-weight: 600;
+}
+
+/* Sidebar enhancements for dark mode */
+.dark nav {
+  background-color: hsl(var(--card));
+  border-color: hsl(var(--border));
+}
+
+.dark nav a:hover {
+  background-color: hsl(var(--accent));
+  color: hsl(var(--primary));
+}
+
+.dark nav a.active {
+  background-color: hsl(var(--primary) / 0.15);
+  color: hsl(var(--primary));
+  border-left: 3px solid hsl(var(--primary));
+}
+
+/* Code and pre blocks in dark mode */
+.dark pre,
+.dark code {
+  background-color: hsl(var(--muted));
+  border: 1px solid hsl(var(--border));
+}
+
+/* Improved progress bars in dark mode */
+.dark progress {
+  background-color: hsl(var(--muted));
+}
+
+.dark progress::-webkit-progress-bar {
+  background-color: hsl(var(--muted));
+}
+
+.dark progress::-webkit-progress-value {
+  background-color: hsl(var(--primary));
+}
+
+.dark progress::-moz-progress-bar {
+  background-color: hsl(var(--primary));
+}
+
+/* Hide scrollbar while maintaining scroll functionality */
+.hide-scrollbar {
+  -ms-overflow-style: none;
+  /* IE and Edge */
+  scrollbar-width: none;
+  /* Firefox */
+}
+
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
+  /* Chrome, Safari and Opera */
+}
+
+/* ============================================================
+   History Modal - Profit Statistics Page
+   Simple approach matching other working modals
+   ============================================================ */
+
+/* Scrollable content area for history modal */
+.modal-scroll-area {
+  max-height: calc(100vh - 200px);
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+}

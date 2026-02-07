@@ -1,0 +1,12 @@
+.next/
+node_modules/
+dist/
+build/
+coverage/
+logs/
+*.log
+.DS_Store
+.env
+.env.*
+!.env.example
+.gemini/

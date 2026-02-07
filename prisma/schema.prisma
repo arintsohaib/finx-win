@@ -1,0 +1,395 @@
+generator client {
+    provider = "prisma-client-js"
+    output   = "../node_modules/.prisma/client"
+    binaryTargets = ["native", "linux-musl", "linux-musl-openssl-3.0.x", "debian-openssl-3.0.x"]
+}
+
+datasource db {
+    provider = "postgresql"
+    url      = env("DATABASE_URL")
+}
+
+model User {
+  walletAddress        String          @id @map("wallet_address")
+  uid                  String          @unique
+  createdAt            DateTime        @default(now()) @map("created_at")
+  lastLogin            DateTime?       @map("last_login")
+  tradeStatus          String          @default("automatic") @map("trade_status")
+  customWinPercentage  Decimal?        @map("custom_win_percentage") @db.Decimal(5, 2)
+  customLossPercentage Decimal?        @map("custom_loss_percentage") @db.Decimal(5, 2)
+  kycStatus            String          @default("not_submitted") @map("kyc_status")
+  kycSubmittedAt       DateTime?       @map("kyc_submitted_at")
+  kycReviewedAt        DateTime?       @map("kyc_reviewed_at")
+  kycReviewedBy        String?         @map("kyc_reviewed_by")
+  kycRejectionReason   String?         @map("kyc_rejection_reason")
+  assignedEmployeeId   String?         @map("assigned_employee_id")
+  activityLogs         ActivityLog[]
+  balances             Balance[]
+  chatMessages         ChatMessage[]
+  chatSessions         ChatSession[]
+  conversions          Conversion[]
+  deposits             Deposit[]
+  kycSubmissions       KYCSubmission[]
+  notifications        Notification[]
+  trades               Trade[]
+  assignedEmployee     Admin?          @relation("ManagedUsers", fields: [assignedEmployeeId], references: [id])
+  withdrawals          Withdrawal[]
+
+  // Suspension
+  isSuspended          Boolean         @default(false) @map("is_suspended")
+  suspensionReason     String?         @map("suspension_reason")
+
+  // Trading Limits
+  tradeLimit           Int             @default(50) @map("trade_limit")
+
+  @@map("users")
+}
+
+model Balance {
+  id            Int      @id @default(autoincrement())
+  walletAddress String   @map("wallet_address")
+  currency      String
+  amount        Decimal  @default(0) @db.Decimal(18, 8)
+  realBalance   Decimal  @default(0) @map("real_balance") @db.Decimal(18, 8)
+  realWinnings  Decimal  @default(0) @map("real_winnings") @db.Decimal(18, 8)
+  frozenBalance Decimal  @default(0) @map("frozen_balance") @db.Decimal(18, 8)
+  updatedAt     DateTime @default(now()) @updatedAt @map("updated_at")
+  user          User     @relation(fields: [walletAddress], references: [walletAddress], onDelete: Cascade)
+
+  @@unique([walletAddress, currency])
+  @@map("balances")
+}
+
+model Trade {
+  id                  String    @id @default(uuid())
+  walletAddress       String    @map("wallet_address")
+  asset               String
+  side                String
+  entryPrice          Decimal   @map("entry_price") @db.Decimal(18, 8)
+  amountUsd           Decimal   @map("amount_usd") @db.Decimal(18, 2)
+  duration            String
+  profitMultiplier    String    @map("profit_multiplier")
+  fee                 Decimal   @db.Decimal(18, 8)
+  status              String    @default("active")
+  result              String    @default("pending")
+  createdAt           DateTime  @default(now()) @map("created_at")
+  expiresAt           DateTime  @map("expires_at")
+  closedAt            DateTime? @map("closed_at")
+  exitPrice           Decimal?  @map("exit_price") @db.Decimal(18, 8)
+  pnl                 Decimal?  @db.Decimal(18, 8)
+  manualOutcomePreset String?   @map("manual_outcome_preset") // "WIN", "LOSS", or null - preset outcome that applies when timer expires
+  manualPresetBy      String?   @map("manual_preset_by") // Admin who set the preset
+  manualPresetAt      DateTime? @map("manual_preset_at") // When the preset was set
+  user                User      @relation(fields: [walletAddress], references: [walletAddress], onDelete: Cascade)
+
+  @@index([status])
+  @@index([expiresAt])
+  @@index([status, expiresAt])
+  @@map("trades")
+}
+
+model Deposit {
+  id                String    @id @default(uuid())
+  walletAddress     String    @map("wallet_address")
+  currency          String
+  cryptoAmount      Decimal   @default(0) @map("crypto_amount") @db.Decimal(18, 8)
+  usdtAmount        Decimal   @default(0) @map("usdt_amount") @db.Decimal(18, 2)
+  conversionRate    Decimal   @default(1) @map("conversion_rate") @db.Decimal(18, 8)
+  depositAddress    String    @map("deposit_address")
+  status            String    @default("pending") // "pending", "approved", "rejected", "adjusted"
+  txHash            String?   @map("tx_hash")
+  paymentScreenshot String?   @map("payment_screenshot")
+  adminNotes        String?   @map("admin_notes")
+  createdAt         DateTime  @default(now()) @map("created_at")
+  approvedAt        DateTime? @map("approved_at")
+  rejectedAt        DateTime? @map("rejected_at")
+  adjustedAmount    String?   @map("adjusted_amount")
+  adjustedAt        DateTime? @map("adjusted_at")
+  adjustedBy        String?   @map("adjusted_by")
+  adjustmentReason  String?   @map("adjustment_reason")
+  originalAmount    String?   @map("original_amount")
+  processedBy       String?   @map("processed_by")
+  processedAt       DateTime? @map("processed_at")
+  user              User      @relation(fields: [walletAddress], references: [walletAddress], onDelete: Cascade)
+
+  @@map("deposits")
+}
+
+model Withdrawal {
+  id                 String    @id @default(uuid())
+  walletAddress      String    @map("wallet_address")
+  currency           String
+  cryptoAmount       Decimal   @default(0) @map("crypto_amount") @db.Decimal(18, 8)
+  usdtAmount         Decimal   @default(0) @map("usdt_amount") @db.Decimal(18, 2)
+  conversionRate     Decimal   @default(1) @map("conversion_rate") @db.Decimal(18, 8)
+  destinationAddress String    @map("destination_address")
+  status             String    @default("pending")
+  txHash             String?   @map("tx_hash")
+  fee                Decimal   @default(0) @db.Decimal(18, 8)
+  adminNotes         String?   @map("admin_notes")
+  createdAt          DateTime  @default(now()) @map("created_at")
+  processedAt        DateTime? @map("processed_at")
+  rejectedAt         DateTime? @map("rejected_at")
+  processedBy        String?   @map("processed_by")
+  user               User      @relation(fields: [walletAddress], references: [walletAddress], onDelete: Cascade)
+
+  @@map("withdrawals")
+}
+
+model Conversion {
+  id            String   @id @default(uuid())
+  walletAddress String   @map("wallet_address")
+  fromCurrency  String   @map("from_currency")
+  toCurrency    String   @map("to_currency")
+  fromAmount    Decimal  @map("from_amount") @db.Decimal(18, 8)
+  toAmount      Decimal  @map("to_amount") @db.Decimal(18, 8)
+  rate          Decimal  @db.Decimal(18, 8)
+  fee           Decimal  @db.Decimal(18, 8)
+  status        String   @default("completed")
+  createdAt     DateTime @default(now()) @map("created_at")
+  user          User     @relation(fields: [walletAddress], references: [walletAddress], onDelete: Cascade)
+
+  @@map("conversions")
+}
+
+model DepositAddress {
+  id            String   @id @default(uuid())
+  walletAddress String   @map("wallet_address")
+  currency      String
+  address       String
+  qrCode        String?  @map("qr_code")
+  createdAt     DateTime @default(now()) @map("created_at")
+  expiresAt     DateTime @map("expires_at")
+  isActive      Boolean  @default(true) @map("is_active")
+
+  @@index([walletAddress, currency, isActive])
+  @@map("deposit_addresses")
+}
+
+model ChatMessage {
+  id            String       @id @default(uuid())
+  sessionId     String?      @map("session_id")
+  walletAddress String?      @map("wallet_address")
+  adminId       String?      @map("admin_id")
+  senderType    String       @map("sender_type")
+  message       String
+  messageType   String       @default("text") @map("message_type")
+  fileUrl       String?      @map("file_url")
+  fileName      String?      @map("file_name")
+  isRead        Boolean      @default(false) @map("is_read")
+  delivered     Boolean      @default(false)
+  seen          Boolean      @default(false)
+  createdAt     DateTime     @default(now()) @map("created_at")
+  updatedAt     DateTime     @updatedAt @map("updated_at")
+  session       ChatSession? @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  user          User?        @relation(fields: [walletAddress], references: [walletAddress], onDelete: Cascade)
+
+  @@index([walletAddress, createdAt])
+  @@index([sessionId, createdAt])
+  @@index([adminId])
+  @@map("chat_messages")
+}
+
+model ChatSession {
+  id              String        @id @default(uuid())
+  walletAddress   String        @map("wallet_address")
+  userUid         String?       @map("user_uid")
+  userName        String?       @map("user_name")
+  assignedAdminId String?       @map("assigned_admin_id")
+  status          String        @default("active")
+  lastMessageAt   DateTime      @default(now()) @map("last_message_at")
+  createdAt       DateTime      @default(now()) @map("created_at")
+  closedAt        DateTime?     @map("closed_at")
+  closedBy        String?       @map("closed_by")
+  rating          Int?
+  ratingFeedback  String?       @map("rating_feedback")
+  messages        ChatMessage[]
+  user            User          @relation(fields: [walletAddress], references: [walletAddress], onDelete: Cascade)
+
+  @@index([userUid])
+  @@index([walletAddress, status])
+  @@index([assignedAdminId, status])
+  @@index([status, lastMessageAt])
+  @@map("chat_sessions")
+}
+
+model ChatTyping {
+  id            String   @id @default(uuid())
+  sessionId     String   @map("session_id")
+  senderType    String   @map("sender_type")
+  walletAddress String?  @map("wallet_address")
+  adminId       String?  @map("admin_id")
+  createdAt     DateTime @default(now()) @map("created_at")
+  expiresAt     DateTime @map("expires_at")
+
+  @@index([sessionId, senderType])
+  @@map("chat_typing")
+}
+
+model ChatQuickReply {
+  id        String   @id @default(uuid())
+  title     String
+  message   String
+  category  String
+  isActive  Boolean  @default(true) @map("is_active")
+  sortOrder Int      @default(0) @map("sort_order")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([category, isActive])
+  @@map("chat_quick_replies")
+}
+
+model Notification {
+  id            String   @id @default(uuid())
+  walletAddress String   @map("wallet_address")
+  type          String
+  title         String
+  message       String
+  isRead        Boolean  @default(false) @map("is_read")
+  link          String?
+  tradeId       String?  @map("trade_id")
+  createdAt     DateTime @default(now()) @map("created_at")
+  user          User     @relation(fields: [walletAddress], references: [walletAddress], onDelete: Cascade)
+
+  @@index([walletAddress, isRead, createdAt])
+  @@map("notifications")
+}
+
+model AdminSettings {
+  id          String   @id @default(uuid())
+  key         String   @unique
+  value       String
+  description String?
+  updatedAt   DateTime @default(now()) @updatedAt @map("updated_at")
+
+  @@map("admin_settings")
+}
+
+model AssetTradingSettings {
+  id          String   @id @default(uuid())
+  assetSymbol String   @unique @map("asset_symbol")
+  assetType   String   @map("asset_type")
+  assetName   String   @map("asset_name")
+  isEnabled   Boolean  @default(true) @map("is_enabled")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @default(now()) @updatedAt @map("updated_at")
+  sortOrder   Int      @default(0) @map("sort_order")
+
+  @@index([assetType, sortOrder])
+  @@index([isEnabled])
+  @@map("asset_trading_settings")
+}
+
+model GlobalAssetSettings {
+  id              String   @id @default(uuid())
+  deliveryTime    String   @map("delivery_time")
+  profitLevel     Decimal  @map("profit_level") @db.Decimal(5, 2)
+  minUsdt         Decimal  @map("min_usdt") @db.Decimal(18, 2)
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @default(now()) @updatedAt @map("updated_at")
+  durationSeconds Int      @default(0) @map("duration_seconds")
+  durationUnit    String   @default("s") @map("duration_unit")
+  durationValue   Int      @default(0) @map("duration_value")
+
+  @@index([durationSeconds])
+  @@map("global_asset_settings")
+}
+
+model CryptoWallet {
+  id              String   @id @default(uuid())
+  currency        String   @unique
+  walletAddress   String   @map("wallet_address")
+  qrCodeUrl       String?  @map("qr_code_url")
+  isEnabled       Boolean  @default(true) @map("is_enabled")
+  network         String?
+  minDepositUsdt  Decimal  @default(10) @map("min_deposit_usdt") @db.Decimal(18, 2)
+  minWithdrawUsdt Decimal  @default(10) @map("min_withdraw_usdt") @db.Decimal(18, 2)
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @default(now()) @updatedAt @map("updated_at")
+
+  @@map("crypto_wallets")
+}
+
+model WalletSettings {
+  id          String   @id @default(uuid())
+  key         String   @unique
+  value       String
+  description String?
+  updatedAt   DateTime @default(now()) @updatedAt @map("updated_at")
+
+  @@map("wallet_settings")
+}
+
+model Admin {
+  id           String    @id @default(uuid())
+  username     String    @unique
+  email        String?   @unique
+  passwordHash String    @map("password_hash")
+  permissions  String
+  isActive     Boolean   @default(true) @map("is_active")
+  createdAt    DateTime  @default(now()) @map("created_at")
+  createdBy    String?   @map("created_by")
+  lastLogin    DateTime? @map("last_login")
+  role         AdminRole @default(ADMIN)
+  managedUsers User[]    @relation("ManagedUsers")
+  activityLogs ActivityLog[]
+
+  @@map("admins")
+}
+
+model KYCSubmission {
+  id              String    @id @default(uuid())
+  walletAddress   String    @map("wallet_address")
+  fullName        String    @map("full_name")
+  email           String
+  phone           String?
+  documentUrl     String?   @map("document_url")
+  status          String    @default("pending")
+  rejectionReason String?   @map("rejection_reason")
+  reviewedBy      String?   @map("reviewed_by")
+  reviewedAt      DateTime? @map("reviewed_at")
+  submittedAt     DateTime  @default(now()) @map("submitted_at")
+  user            User      @relation(fields: [walletAddress], references: [walletAddress], onDelete: Cascade)
+
+  @@index([walletAddress, status])
+  @@index([status, submittedAt])
+  @@map("kyc_submissions")
+}
+
+model ActivityLog {
+  id               String   @id @default(uuid())
+  walletAddress    String   @map("wallet_address")
+  uid              String
+  userName         String?  @map("user_name")
+  userEmail        String?  @map("user_email")
+  activityType     String   @map("activity_type")
+  activityCategory String   @map("activity_category")
+  cryptoType       String?  @map("crypto_type")
+  amount           Decimal? @db.Decimal(18, 8)
+  amountUsd        Decimal? @map("amount_usd") @db.Decimal(18, 2)
+  status           String   @default("pending")
+  referenceId      String?  @map("reference_id")
+  metadata         String?
+  ipAddress        String?  @map("ip_address")
+  userAgent        String?  @map("user_agent")
+  adminId          String?  @map("admin_id")
+  createdAt        DateTime @default(now()) @map("created_at")
+  user             User     @relation(fields: [walletAddress], references: [walletAddress], onDelete: Cascade)
+  admin            Admin?   @relation(fields: [adminId], references: [id])
+
+  @@index([activityType, createdAt])
+  @@index([activityCategory, createdAt])
+  @@index([walletAddress, createdAt])
+  @@index([uid, createdAt])
+  @@index([status, createdAt])
+  @@index([createdAt])
+  @@map("activity_logs")
+}
+
+
+
+enum AdminRole {
+  SUPER_ADMIN
+  ADMIN
+  EMPLOYEE
+}

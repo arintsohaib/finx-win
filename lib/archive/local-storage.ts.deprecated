@@ -1,0 +1,176 @@
+
+/**
+ * Local File Storage System
+ * Replaces AWS S3 / Cloudflare R2 with local server storage
+ */
+
+import fs from 'fs';
+import path from 'path';
+import { promisify } from 'util';
+
+const writeFile = promisify(fs.writeFile);
+const unlink = promisify(fs.unlink);
+const access = promisify(fs.access);
+const mkdir = promisify(fs.mkdir);
+
+// Base uploads directory - MUST be in public folder for Next.js static serving
+const UPLOADS_DIR = path.join(process.cwd(), 'public', 'uploads');
+
+/**
+ * Sanitize filename to prevent security issues
+ */
+function sanitizeFileName(fileName: string): string {
+  return fileName
+    .replace(/[^a-zA-Z0-9.-]/g, '_')
+    .replace(/_{2,}/g, '_')
+    .toLowerCase();
+}
+
+/**
+ * Generate unique filename with timestamp
+ */
+function generateUniqueFileName(originalName: string): string {
+  const timestamp = Date.now();
+  const sanitized = sanitizeFileName(originalName);
+  return `${timestamp}-${sanitized}`;
+}
+
+/**
+ * Upload file to local storage
+ * @param buffer - File buffer
+ * @param folder - Subfolder (e.g., 'deposits', 'withdrawals', 'chat', 'kyc')
+ * @param originalFileName - Original file name
+ * @returns File path relative to uploads directory
+ */
+export async function uploadFile(
+  buffer: Buffer,
+  folder: string,
+  originalFileName: string
+): Promise<string> {
+  try {
+    // ⚡ FAST UPLOAD - Minimal logging for speed
+    console.log('[Upload] Starting:', { folder, file: originalFileName, size: buffer.length });
+
+    // Validate buffer
+    if (!buffer || buffer.length === 0) {
+      throw new Error('Empty buffer provided');
+    }
+
+    // Ensure folder exists (recursive creation is fast)
+    const folderPath = path.join(UPLOADS_DIR, folder);
+    await mkdir(folderPath, { recursive: true });
+
+    // Generate unique filename
+    const fileName = generateUniqueFileName(originalFileName);
+    const filePath = path.join(folderPath, fileName);
+    
+    // ⚡ WRITE IMMEDIATELY - No delays, no verification, just write!
+    await writeFile(filePath, buffer, { mode: 0o644 });
+
+    // ⚡ QUICK EXISTENCE CHECK ONLY (< 5ms)
+    try {
+      await access(filePath, fs.constants.F_OK);
+    } catch {
+      throw new Error('File was not written to disk');
+    }
+
+    // Return relative path from public folder (stored in database)
+    const relativePath = `/uploads/${folder}/${fileName}`;
+    console.log('[Upload] ✅ Complete:', relativePath);
+    return relativePath;
+  } catch (error) {
+    console.error('[Upload] ❌ Error:', error instanceof Error ? error.message : String(error));
+    throw new Error(`Upload failed: ${error instanceof Error ? error.message : String(error)}`);
+  }
+}
+
+/**
+ * Delete file from local storage
+ * @param filePath - Relative file path (e.g., '/uploads/deposits/123456-proof.jpg' or 'uploads/deposits/123456-proof.jpg')
+ */
+export async function deleteFile(filePath: string): Promise<void> {
+  try {
+    const cleanPath = filePath.startsWith('/') ? filePath.slice(1) : filePath;
+    const fullPath = path.join(process.cwd(), 'public', cleanPath);
+    
+    // Check if file exists
+    if (await fileExists(filePath)) {
+      await unlink(fullPath);
+    }
+  } catch (error) {
+    console.error('Error deleting file:', error);
+    throw new Error('Failed to delete file');
+  }
+}
+
+/**
+ * Check if file exists
+ * @param filePath - Relative file path (can start with / or not)
+ * @returns True if file exists
+ */
+export async function fileExists(filePath: string): Promise<boolean> {
+  try {
+    const cleanPath = filePath.startsWith('/') ? filePath.slice(1) : filePath;
+    const fullPath = path.join(process.cwd(), 'public', cleanPath);
+    await access(fullPath, fs.constants.F_OK);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Get file URL for serving
+ * @param filePath - Relative file path from public folder
+ * @returns URL to access the file (static URL)
+ */
+export function getFileUrl(filePath: string): string {
+  // Files are served as static assets from the public folder
+  // If path starts with /uploads, return as-is
+  // Otherwise, prepend /uploads if needed
+  if (filePath.startsWith('/uploads/') || filePath.startsWith('uploads/')) {
+    return filePath.startsWith('/') ? filePath : `/${filePath}`;
+  }
+  return `/uploads/${filePath}`;
+}
+
+/**
+ * Read file from local storage
+ * @param filePath - Relative file path (can start with / or not)
+ * @returns File buffer
+ */
+export async function readFile(filePath: string): Promise<Buffer> {
+  try {
+    // Remove leading slash if present
+    const cleanPath = filePath.startsWith('/') ? filePath.slice(1) : filePath;
+    const fullPath = path.join(process.cwd(), 'public', cleanPath);
+    return fs.promises.readFile(fullPath);
+  } catch (error) {
+    console.error('Error reading file:', error);
+    throw new Error('File not found');
+  }
+}
+
+/**
+ * Validate file type
+ * @param fileName - File name
+ * @param allowedTypes - Allowed MIME types or extensions (default: only image formats for payment proofs)
+ */
+export function validateFileType(
+  fileName: string,
+  allowedTypes: string[] = ['image/jpeg', 'image/png', 'image/jpg']
+): boolean {
+  const ext = path.extname(fileName).toLowerCase();
+  // CRITICAL: Only allow .png, .jpg, .jpeg for payment proofs
+  const allowedExtensions = ['.jpg', '.jpeg', '.png'];
+  return allowedExtensions.includes(ext);
+}
+
+/**
+ * Validate file size
+ * @param size - File size in bytes
+ * @param maxSize - Maximum size in bytes (default: 10MB)
+ */
+export function validateFileSize(size: number, maxSize: number = 10 * 1024 * 1024): boolean {
+  return size <= maxSize;
+}
